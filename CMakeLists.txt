@@ -15,16 +15,28 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 find_package(Detours REQUIRED)
 
+if(MINGW)
+    add_link_options(-static-libgcc -static-libstdc++ -s)
+#    link_libraries(libwinpthread.a)
+endif()
+
 add_library(extradebug SHARED
     extradebug.cpp
+    hook.def
 )
 target_link_libraries(extradebug PRIVATE Detours::Detours)
-target_link_options(extradebug PRIVATE /export:DetourFinishHelperProcess,@1,NONAME)
+set_target_properties(extradebug PROPERTIES PREFIX "")
+if(MINGW)
+    target_link_libraries(extradebug PRIVATE libwinpthread.a)
+endif()
 
 add_executable(carm95inj
     carma95inj.cpp
 )
 target_link_libraries(carm95inj PRIVATE Detours::Detours)
+if(MINGW)
+    target_link_libraries(carm95inj PRIVATE libwinpthread.a)
+endif()
 
 if(CARM95_PATH)
     add_custom_target(copy_to_carm95_folder

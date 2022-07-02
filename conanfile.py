@@ -9,7 +9,6 @@ class CarmaBypass(ConanFile):
     def validate(self):
         assert self.settings.os == "Windows"
         assert self.settings.arch == "x86"
-        assert self.settings.compiler == "Visual Studio"
         assert self.settings.build_type == "Release"
 
     def build(self):

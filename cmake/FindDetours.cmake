@@ -1,10 +1,10 @@
 find_library(DETOURS_LIBRARY
     NAMES detours
-#    PATH_SUFFIXES lib
+    PATH_SUFFIXES lib
 )
 find_path(DETOURS_INCLUDE_PATH
     NAMES detours.h
-#    PATH_SUFFIXES include
+    PATH_SUFFIXES include
 )
 
 include(FindPackageHandleStandardArgs)

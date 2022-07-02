@@ -158,7 +158,7 @@ int CDECL main(int argc, char **argv)
 
     DWORD dwResult = 0;
     if (!GetExitCodeProcess(pi.hProcess, &dwResult)) {
-        printf("withdll.exe: GetExitCodeProcess failed: %ld\n", GetLastError());
+        printf("carm95inj.exe: GetExitCodeProcess failed: %ld\n", GetLastError());
         return 9010;
     }
 

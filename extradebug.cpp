@@ -2,9 +2,10 @@
 #include <windows.h>
 #include <detours.h>
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 
 class StaticPatcher
 {
