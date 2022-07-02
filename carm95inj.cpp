@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace fs = std::filesystem;
+
 struct ExportContext
 {
     BOOL    fHasOrdinal1;
@@ -31,8 +33,8 @@ static BOOL CALLBACK ExportCallback(_In_opt_ PVOID pContext,
 }
 
 static bool ValidatePlugin(const std::string &pluginPath) {
-    HMODULE hDll = LoadLibraryExA(pluginPath.c_str(), NULL, DONT_RESOLVE_DLL_REFERENCES);
-    if (hDll == NULL) {
+    HMODULE hDll = LoadLibraryExA(pluginPath.c_str(), nullptr, DONT_RESOLVE_DLL_REFERENCES);
+    if (hDll == nullptr) {
         printf("Error: %s failed to load (error %ld).\n", pluginPath.c_str(), GetLastError());
         return false;
     }
@@ -50,24 +52,18 @@ static bool ValidatePlugin(const std::string &pluginPath) {
     return true;
 }
 
-
-namespace fs = std::filesystem;
-//////////////////////////////////////////////////////////////////////// main.
-//
 int CDECL main(int argc, char **argv)
 {
-    char exePath[512];
-
-#if 1
-    DWORD nLen = GetCurrentDirectory(sizeof(exePath), exePath);
-    const auto carmaPathDir = fs::path(exePath);
+#if 0
+    auto carmaPathDir = fs::current_path();
 #else
-
-    DWORD nLen = GetModuleFileNameA(NULL, exePath, sizeof(exePath));
+    char exePath[512];
+    DWORD nLen = GetModuleFileNameA(nullptr, exePath, sizeof(exePath));
     if (nLen == sizeof(exePath)) {
         return 1;
     }
     exePath[nLen] = '\0';
+    auto carmaPathDir = fs::path(exePath).parent_path();
 #endif
     const auto carmaPathDirStr = carmaPathDir.generic_string();
     const auto pluginsDirPath = carmaPathDir / "plugins";
@@ -127,17 +123,17 @@ int CDECL main(int argc, char **argv)
     if (!DetourCreateProcessWithDllsA(
             carm95ExePath.c_str(),
             commandBuffer,
-            NULL,
-            NULL,
+            nullptr,
+            nullptr,
             TRUE,
             dwFlags,
-            NULL,
+            nullptr,
             carmaPathDirStr.c_str(),
             &si,
             &pi,
             pluginPathsCStrs.size(),
             pluginPathsCStrs.data(),
-            NULL)) {
+            nullptr)) {
         DWORD dwError = GetLastError();
         printf("carm95inj.exe: DetourCreateProcessWithDllEx failed: %ld\n", dwError);
         if (dwError == ERROR_INVALID_HANDLE) {
@@ -158,7 +154,7 @@ int CDECL main(int argc, char **argv)
 
     DWORD dwResult = 0;
     if (!GetExitCodeProcess(pi.hProcess, &dwResult)) {
-        printf("carm95inj.exe: GetExitCodeProcess failed: %ld\n", GetLastError());
+        printf("withdll.exe: GetExitCodeProcess failed: %ld\n", GetLastError());
         return 9010;
     }
 

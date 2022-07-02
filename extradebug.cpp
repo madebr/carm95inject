@@ -1,4 +1,3 @@
-
 #include <windows.h>
 #include <detours.h>
 
@@ -12,9 +11,9 @@ class StaticPatcher
 private:
     using Patcher = void(*)();
 
-    Patcher		m_func;
-    StaticPatcher	*m_next;
-    static StaticPatcher	*ms_head;
+    Patcher m_func;
+    StaticPatcher   *m_next;
+    static StaticPatcher    *ms_head;
 
     void Run() { m_func(); }
 public:
@@ -60,12 +59,15 @@ static Carm95Type DetectCarm95Type() {
     if (*(uint32_t*)0x004b2600 == 0x8b575653) {
         return Carm95Type::CARM95_SPLATPACK;
     }
+    if (*(uint32_t*)0x004985ec == 0xfdf4858b) {
+        return Carm95Type::CARM95_C1;
+    }
     return Carm95Type::CARM95_UNKNOWN;
 }
 
+#ifdef INJECT_DR_DPRINTF
 typedef void (__cdecl * tdr_dprintf)(const char* fmt, ...);
-//static tdr_dprintf dr_dprintf = (tdr_dprintf)0x00461645;
-static  tdr_dprintf  dr_dprintf = (tdr_dprintf)0x004616d5;
+static  tdr_dprintf  dr_dprintf;
 static void dr_dprintf_hook(const char* fmt, ...) {
     va_list ap;
 
@@ -86,7 +88,6 @@ static void dr_dprintf_hook(const char* fmt, ...) {
 }
 
 STARTPATCHES
-    printf("Apply dr_dprintf\n");
     switch (DetectCarm95Type()) {
     case Carm95Type::CARM95_SPLATPACK:
         dr_dprintf = (tdr_dprintf)0x00461645;
@@ -95,9 +96,13 @@ STARTPATCHES
         dr_dprintf = (tdr_dprintf)0x004616d5;
         break;
     }
-    DetourAttach(&dr_dprintf, dr_dprintf_hook);
+    if (dr_dprintf) {
+        DetourAttach(&dr_dprintf, dr_dprintf_hook);
+    }
 ENDPATCHES
+#endif
 
+#ifdef INJECT_DRFOPEN
 typedef void * (__cdecl * tDRfopen)(const char*, const char*);
 static tDRfopen DRfopen = (tDRfopen)0x00426583;
 static void *__cdecl DRfopen_hook(const char* path, const char* mode) {
@@ -112,8 +117,11 @@ STARTPATCHES
         DRfopen = (tDRfopen)0x00426583;
         break;
     }
-    DetourAttach(&DRfopen, DRfopen_hook);
+    if (DRfopen) {
+        DetourAttach(&DRfopen, DRfopen_hook);
+    }
 ENDPATCHES
+#endif
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved)
 {
@@ -133,6 +141,17 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID reserved)
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
 
+        switch (DetectCarm95Type()) {
+        case Carm95Type::CARM95_SPLATPACK:
+            printf("Detected Carmageddon Splat Pack CARM95.EXE executable\n");
+            break;
+        case Carm95Type::CARM95_C1:
+            printf("Detected Carmageddon1 CARM95.EXE executable\n");
+            break;
+        case Carm95Type::CARM95_UNKNOWN:
+            printf("UNKNOWN executable\n");
+            break;
+        }
         StaticPatcher::Apply();
 
         DetourTransactionCommit();
